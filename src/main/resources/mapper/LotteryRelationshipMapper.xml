@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yumumu.lotterystatistic.dao.mapper.LotteryRelationshipMapper">
+
+    <resultMap id="BaseResultMap" type="com.yumumu.lotterystatistic.dao.domain.LotteryRelationship">
+            <id property="id" column="id" jdbcType="INTEGER"/>
+            <result property="snSmall" column="sn_small" jdbcType="VARCHAR"/>
+            <result property="snBig" column="sn_big" jdbcType="VARCHAR"/>
+            <result property="idSmall" column="id_small" jdbcType="INTEGER"/>
+            <result property="idBig" column="id_big" jdbcType="INTEGER"/>
+            <result property="sameSize" column="same_size" jdbcType="INTEGER"/>
+            <result property="sameNums" column="same_nums" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,sn_small,sn_big,
+        id_small,id_big,same_size,
+        same_nums
+    </sql>
+</mapper>
