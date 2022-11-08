@@ -1,16 +1,22 @@
 package com.yumumu.lotterystatistic.service;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.yumumu.lotterystatistic.dao.domain.LotteryNum;
 import com.yumumu.lotterystatistic.dao.service.LotteryNumService;
 import com.yumumu.lotterystatistic.model.AnalysisDataBo;
+import com.yumumu.lotterystatistic.model.BingoCodeBo;
+import com.yumumu.lotterystatistic.model.BlueNumBo;
+import com.yumumu.lotterystatistic.model.CheckNumBo;
+import com.yumumu.lotterystatistic.util.BitNumUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author zhanghailin
@@ -83,4 +89,80 @@ public class AnalysisService {
         return analysisDataBo;
     }
 
+    @Value("${blue.loop:16}")
+    private Integer blueLoop;
+
+    public List<BlueNumBo> getBlueNums(Integer highLevelCount, Integer middleLevelCount, Integer lowLevelCount) {
+        List<BlueNumBo> result = new ArrayList<>();
+        LambdaQueryWrapper<LotteryNum> wrapper = Wrappers.lambdaQuery();
+        wrapper.orderByDesc(LotteryNum::getId).last(String.format(" limit %s", blueLoop));
+        List<LotteryNum> lotteryNumList = lotteryNumService.list(wrapper);
+        //  找出不存在的数字
+        List<Integer> numList = new ArrayList<>();
+        for (int i = 1; i <= 16; i++) {
+            numList.add(i);
+        }
+        lotteryNumList.forEach(e->{
+            numList.remove(e.getBlue());
+        });
+        if (numList.size() > 0) {
+            List<BlueNumBo> highLevelBlueNumList = new ArrayList<>();
+            numList.forEach(e->{
+                LambdaQueryWrapper<LotteryNum> lambdaQuery = Wrappers.lambdaQuery();
+                lambdaQuery.eq(LotteryNum::getBlue, e).orderByDesc(LotteryNum::getId).last(" limit 1");
+                List<LotteryNum> list = lotteryNumService.list(lambdaQuery);
+                if (!CollectionUtils.isEmpty(list)) {
+                    highLevelBlueNumList.add(BlueNumBo.builder().blue(e).level(1).lastId(list.get(0).getId()).build());
+                }
+            });
+            Collections.sort(highLevelBlueNumList, Comparator.comparingInt(BlueNumBo::getLastId));
+            for (int i = 0; i < Math.min(highLevelCount, highLevelBlueNumList.size()); i++) {
+                BlueNumBo blueNumBo = highLevelBlueNumList.get(i);
+                blueNumBo.setLastId(0);
+                result.add(blueNumBo);
+            }
+        }
+        //  存在的数组排序
+        Map<Integer, List<LotteryNum>> collect = lotteryNumList.stream().collect(Collectors.groupingBy(LotteryNum::getBlue));
+        TreeMap<Integer, List<Integer>> blueNumRateTreeMap = new TreeMap<>();
+        collect.forEach((k,v)->{
+            List<Integer> list = blueNumRateTreeMap.computeIfAbsent(v.size(), key -> new ArrayList<>());
+            list.add(k);
+        });
+
+        for (Integer key: blueNumRateTreeMap.keySet()) {
+            if (middleLevelCount <= 0) {
+                break;
+            }
+            List<Integer> list = blueNumRateTreeMap.get(key);
+            Collections.sort(list, (o1, o2) -> new Random().nextInt()/2);
+            for (Integer blue : list) {
+                if (middleLevelCount-- <= 0) {
+                    break;
+                }
+                result.add(BlueNumBo.builder().blue(blue).level(0).build());
+            }
+        }
+
+        while (lowLevelCount > 0) {
+            int blue = new Random().nextInt(17);
+            if (blue == 0 || result.stream().map(BlueNumBo::getBlue).collect(Collectors.toSet()).contains(blue)) {
+                continue;
+            }
+            result.add(BlueNumBo.builder().blue(blue).level(-1).build());
+            lowLevelCount--;
+        }
+
+        return result;
+    }
+
+    public List<BingoCodeBo> check(CheckNumBo checkNumBo) {
+        List<BingoCodeBo> result = new ArrayList<>(checkNumBo.getCodeList().size());
+        String bingoCode = checkNumBo.getBingoCode();
+        checkNumBo.getCodeList().forEach(e->{
+            Integer bingoLevel = BitNumUtils.bingoLevel(e, bingoCode);
+            result.add(BingoCodeBo.builder().code(e).bingoLevel(bingoLevel).build());
+        });
+        return result;
+    }
 }

@@ -48,61 +48,64 @@ public class BitNumUtils {
         }
         return SameNumBo.builder().sameSize(sameNumList.size()).sameNums(sameNums).build();
     }
-//
-//    04,10,18,19,25,27
-//            03,17,21,23,27,28
-//            05,06,08,21,31,33
-//            04,09,11,17,26,27
 
-    public static void main(String[] args) {
-//        167779840
-//        35389704
-//        2285896257
-//        16781928
-//        1610694696
-//        System.out.println(compareSameSize(167779840l,35389704l));
-//        Long aLong = convertToBitNum("04,10,18,19,25,27");
-//        Long aLong1 = convertToBitNum("03,17,21,23,27,28");
-//        Long aLong2 = convertToBitNum("05,06,08,21,31,33");
-//        Long aLong3 = convertToBitNum("04,10,11,17,25,27");
-//        System.out.println(aLong & aLong1);
-//        System.out.println("  " + Long.toBinaryString(aLong & aLong1));
-//        System.out.println("    " + Long.toBinaryString(aLong & aLong1).replace("0", "").length());
-//        System.out.println(aLong & aLong2);
-//        System.out.println("  " + Long.toBinaryString(aLong & aLong2));
-//        System.out.println("    " + Long.toBinaryString(aLong & aLong2).replace("0", "").length());
-//        System.out.println(aLong & aLong3);
-//        System.out.println("  " + Long.toBinaryString(aLong & aLong3));
-//        System.out.println("    " + Long.toBinaryString(aLong & aLong3).replace("0", "").length());
-//        System.out.println(aLong);
-//        List<Integer> list = new ArrayList<>();
-//        list.add(1);
-//        list.add(0);
-//        list.add(2);
-//        System.out.println(list);
-//        list.remove(new Integer(0));
-//        System.out.println(list);
-        Long aLong = convertToBitNum("10,13,16,20,21,25");
-        Long aLong1 = convertToBitNum("21,12,7,8,15,23");
-        Long aLong2 = convertToBitNum("3,2,26,33,10,29");
-        Long aLong3 = convertToBitNum("2,12,22,1,25,6");
-        Long aLong4 = convertToBitNum("21,24,31,3,12,30");
-        Long aLong5 = convertToBitNum("8,0,22,31,33,2");
-        Long aLong6 = convertToBitNum("29,16,6,23,20,8");
-        Long aLong7 = convertToBitNum("11,10,15,22,9,12");
-        Long aLong8 = convertToBitNum("33,10,0,8,16,32");
-        Long aLong9 = convertToBitNum("5,23,9,22,19,30");
-        Long aLong10 = convertToBitNum("25,9,23,16,12,30");
-        System.out.println(compareSameSize(aLong, aLong1).getSameSize());
-        System.out.println(compareSameSize(aLong, aLong2).getSameSize());
-        System.out.println(compareSameSize(aLong, aLong3).getSameSize());
-        System.out.println(compareSameSize(aLong, aLong4).getSameSize());
-        System.out.println(compareSameSize(aLong, aLong5).getSameSize());
-        System.out.println(compareSameSize(aLong, aLong6).getSameSize());
-        System.out.println(compareSameSize(aLong, aLong7).getSameSize());
-        System.out.println(compareSameSize(aLong, aLong8).getSameSize());
-        System.out.println(compareSameSize(aLong, aLong9).getSameSize());
-        System.out.println(compareSameSize(aLong, aLong10).getSameSize());
+    public static Integer bingoLevel(String code1, String code2) {
+        List<Integer> code1List = new ArrayList<>();
+        List<Integer> code2List = new ArrayList<>();
+        for (String item : code1.split(",")) {
+            code1List.add(Integer.valueOf(item));
+        }
+        for (String item : code2.split(",")) {
+            code2List.add(Integer.valueOf(item));
+        }
+        return bingoLevel(code1List, code2List);
     }
 
+    public static Integer bingoLevel(List<Integer> numList1, List<Integer> numList2) {
+        Integer blue1 = numList1.remove(numList1.size() - 1);
+        Integer blue2 = numList2.remove(numList2.size() - 1);
+        Long bitNum1 = convertToBitNum(numList1);
+        Long bitNum2 = convertToBitNum(numList2);
+        SameNumBo sameNumBo = compareSameSize(bitNum1, bitNum2);
+//    一等奖（6+1）中奖概率为：红球33选6乘以蓝球16选1=1/17721088=0.0000056%；
+//    二等奖（6+0）中奖概率为：红球33选6乘以蓝球16选0=15/17721088=0.0000846%；
+//    三等奖（5+1）中奖概率为：红球33选5乘以蓝球16选1=162/17721088=0.000914%；
+//    四等奖（5+0、4+1）中奖概率为：红球33选5乘以蓝球16选0=7695/17721088=0.0434%；
+//    五等奖（4+0、3+1）中奖概率为：红球33选4乘以蓝球16选0=137475/17721088=0.7758%；
+//    六等奖（2+1、1+1、0+1）中奖概率为：红球33选2乘以蓝球16选1=1043640/17721088=5.889%；
+        boolean blue = false;
+        if (blue1.equals(blue2)) {
+            blue = true;
+        }
+        switch (sameNumBo.getSameSize()) {
+            case 0:
+            case 1:
+            case 2:
+                if (blue) {
+                    return 6;
+                }
+                return -1;
+            case 3:
+                if (blue) {
+                    return 5;
+                }
+                return -1;
+            case 4:
+                if (blue) {
+                    return 4;
+                }
+                return 5;
+            case 5:
+                if (blue) {
+                    return 3;
+                }
+                return 4;
+            case 6:
+                if (blue) {
+                    return 1;
+                }
+                return 2;
+        }
+        return -1;
+    }
 }
