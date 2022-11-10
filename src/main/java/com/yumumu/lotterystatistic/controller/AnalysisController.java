@@ -34,6 +34,11 @@ public class AnalysisController {
         return analysisService.check(checkNumBo);
     }
 
+    @GetMapping("/sn/{sn}")
+    public Object checkNumInSn(@PathVariable("sn") String sn) {
+        return analysisService.checkNumInSn(sn);
+    }
+
     @Resource
     private BingoService bingoService;
 

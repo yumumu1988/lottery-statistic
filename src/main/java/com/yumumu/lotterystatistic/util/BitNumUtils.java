@@ -15,7 +15,11 @@ public class BitNumUtils {
     public static Long convertToBitNum(String code) {
         String[] split = code.split(",");
         Double value = (double) 0;
+        int index = 0;
         for (String item : split) {
+            if (index++ == 6) {
+                break;
+            }
             value += power(Integer.valueOf(item));
         }
         return value.longValue();

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yumumu.lotterystatistic.dao.mapper.HistoryNumMapper">
+
+    <resultMap id="BaseResultMap" type="com.yumumu.lotterystatistic.dao.domain.HistoryNum">
+            <id property="id" column="id" jdbcType="INTEGER"/>
+            <result property="reds" column="reds" jdbcType="VARCHAR"/>
+            <result property="blue" column="blue" jdbcType="VARCHAR"/>
+            <result property="sn" column="sn" jdbcType="VARCHAR"/>
+            <result property="bingoLevel" column="bingo_level" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,reds,blue,
+        sn,bingo_level
+    </sql>
+</mapper>

@@ -2,7 +2,11 @@ package com.yumumu.lotterystatistic.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.yumumu.lotterystatistic.dao.domain.CurrentNum;
+import com.yumumu.lotterystatistic.dao.domain.HistoryNum;
 import com.yumumu.lotterystatistic.dao.domain.LotteryNum;
+import com.yumumu.lotterystatistic.dao.service.CurrentNumService;
+import com.yumumu.lotterystatistic.dao.service.HistoryNumService;
 import com.yumumu.lotterystatistic.dao.service.LotteryNumService;
 import com.yumumu.lotterystatistic.model.AnalysisDataBo;
 import com.yumumu.lotterystatistic.model.BingoCodeBo;
@@ -12,6 +16,7 @@ import com.yumumu.lotterystatistic.util.BitNumUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
@@ -28,6 +33,12 @@ public class AnalysisService {
 
     @Resource
     private LotteryNumService lotteryNumService;
+
+    @Resource
+    private CurrentNumService currentNumService;
+
+    @Resource
+    private HistoryNumService historyNumService;
 
     public void analysisHistoryData() {
         Map<Integer, Integer> map = new HashMap<>();
@@ -163,6 +174,40 @@ public class AnalysisService {
             Integer bingoLevel = BitNumUtils.bingoLevel(e, bingoCode);
             result.add(BingoCodeBo.builder().code(e).bingoLevel(bingoLevel).build());
         });
+        return result;
+    }
+
+    @Transactional
+    public Object checkNumInSn(String sn) {
+        List<CurrentNum> list = currentNumService.list();
+        if (CollectionUtils.isEmpty(list)) {
+            return historyNumService.list(Wrappers.lambdaQuery(HistoryNum.class).eq(HistoryNum::getSn, sn));
+        }
+
+        LotteryNum one = lotteryNumService.getOne(Wrappers.lambdaQuery(LotteryNum.class).eq(LotteryNum::getSn, sn));
+        if (Objects.isNull(one)) {
+            return new ArrayList<>(0);
+        }
+
+        List<HistoryNum> result = new ArrayList<>();
+
+        for (CurrentNum currentNum : list) {
+            String reds = currentNum.getReds();
+            String blues = currentNum.getBlues();
+            for (String blue : blues.split(",")) {
+                String code = String.format("%s,%s", reds, blue);
+                Integer bingoLevel = BitNumUtils.bingoLevel(code, one.getCode());
+                HistoryNum historyNum = new HistoryNum();
+                historyNum.setSn(sn);
+                historyNum.setBingoLevel(bingoLevel);
+                historyNum.setReds(reds);
+                historyNum.setBlue(blue);
+                result.add(historyNum);
+            }
+        }
+
+        currentNumService.getBaseMapper().delete(Wrappers.emptyWrapper());
+        historyNumService.saveBatch(result);
         return result;
     }
 }
